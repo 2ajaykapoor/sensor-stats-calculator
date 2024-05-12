@@ -3,13 +3,11 @@ import cats.effect.ExitCode
 import monix.eval.{Task, TaskApp}
 import monix.reactive.Observable
 import utils.CsvUtil
-import monix.execution.Scheduler.Implicits.global
-
 
 object Start extends TaskApp {
   override def run(args: List[String]): Task[ExitCode] = {
     if (args.length != 1) {
-      println("Required one argument only.")
+      println(s"Required one argument only.")
       Task(ExitCode.Error)
     } else {
       val csvFiles = CsvUtil.listFiles(args.head)
@@ -18,12 +16,11 @@ object Start extends TaskApp {
         .flatMap(SensorProcessor.readSensorDataFromFile)
         .toListL
 
-      sensorDataObservable.runToFuture.foreach { sensorDataList =>
+      val resultTask = sensorDataObservable.flatMap { sensorDataList =>
         val totalFiles = csvFiles.size
         val totalMeasurementsCount = sensorDataList.size
         val validMeasurements = extractValidMeasurements(sensorDataList)
         val nanMeasurements = extractNanMeasurements(sensorDataList)
-        val sensorsWithOnlyNaNMeasurements = extractSensorsWithOnlyNaNMeasurements(nanMeasurements, validMeasurements)
         val succeedMeasurementsCount = validMeasurements.size
         val failedMeasurementsCount = totalMeasurementsCount - succeedMeasurementsCount
 
@@ -33,14 +30,24 @@ object Start extends TaskApp {
         println(s"Failed measurements: $failedMeasurementsCount")
 
         val sensorStats = sortProcessedSensorData(calculateSensorStats(validMeasurements))
+        val sensorsWithOnlyNaNMeasurements = extractSensorsWithOnlyNaNMeasurements(nanMeasurements, validMeasurements)
+
+        // Print sensorStats
         sensorStats.foreach { case (sensorId, (min, avg, max)) =>
           println(s"Sensor $sensorId ||  Min=$min, Avg=$avg, Max=$max")
         }
-        sensorsWithOnlyNaNMeasurements.map { sensorData =>
+
+        // Print sensorsWithOnlyNaNMeasurements
+        sensorsWithOnlyNaNMeasurements.foreach { sensorData =>
           println(s"Sensor ${sensorData.sensorId} ||  Min=NaN, Avg=NaN, Max=NaN")
         }
+        Task(ExitCode.Success)
       }
-      Task(ExitCode.Success)
+
+      resultTask.onErrorHandle { throwable =>
+        println(s"Error occurred: ${throwable.getMessage}")
+        ExitCode.Error
+      }
     }
   }
 }

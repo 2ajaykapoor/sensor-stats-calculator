@@ -10,7 +10,7 @@ class CsvUtilSpec extends AnyFlatSpec with Matchers {
 
   val canonicalPath: String = new java.io.File(".").getCanonicalPath
   val directoryPath = s"$canonicalPath/src/test/scala"
-  val numberOfFilesExist: Int = new File(directoryPath).listFiles().length
+  val numberOfFilesExist: Int = new File(directoryPath).listFiles().count(f => f.getName.endsWith(".csv"))
 
   "CsvUtil.listFiles" should "return a list of FileInfo objects for valid directory path" in {
     val files: Iterable[FileInfo] = CsvUtil.listFiles(directoryPath)

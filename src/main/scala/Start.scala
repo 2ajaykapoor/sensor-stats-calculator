@@ -26,7 +26,7 @@ object Start extends TaskApp {
 
         println(s"Processed $totalFiles files")
         println(s"Processed $totalMeasurementsCount measurements")
-        println(s"Succeed measurements: $succeedMeasurementsCount")
+        println(s"Succeeded measurements: $succeedMeasurementsCount")
         println(s"Failed measurements: $failedMeasurementsCount")
 
         val sensorStats = sortProcessedSensorData(calculateSensorStats(validMeasurements))

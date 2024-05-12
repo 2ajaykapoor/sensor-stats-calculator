@@ -7,8 +7,6 @@ import monix.execution.Scheduler.Implicits.global
 
 
 object Start extends TaskApp {
-
-
   override def run(args: List[String]): Task[ExitCode] = {
     if (args.length != 1) {
       println("Required one argument only.")
